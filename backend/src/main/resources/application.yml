@@ -1,0 +1,23 @@
+server:
+  address: ${SERVER_ADDRESS:127.0.0.1}
+  port: ${PORT:8080}
+spring:
+  application:
+    name: repopulse
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/repopulse}
+    username: ${DATABASE_USER:repopulse}
+    password: ${DATABASE_PASSWORD:}
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+repopulse:
+  github-token: ${GITHUB_TOKEN:}

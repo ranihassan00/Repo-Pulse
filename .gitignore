@@ -1,0 +1,6 @@
+.env
+**/target/
+.idea/
+*.iml
+.superpowers/
+.DS_Store
