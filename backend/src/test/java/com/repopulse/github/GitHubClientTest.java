@@ -59,6 +59,29 @@ class GitHubClientTest {
         var s=client.fetchSnapshot(client.repository("ada","demo"));
         assertThat(s.commits()).isEmpty(); assertThat(s.coverage().headSha()).isNull();
     }
+    @Test void acceptsGitHubsCanonicalNumericRepositoryPagination() {
+        head(); emptyPrs();
+        link("/repos/ada/demo/commits?sha=abc&per_page=100","["+commit("abc")+"]",base()+"/repositories/77/commits?sha=abc&page=2");
+        reply("/repositories/77/commits?sha=abc&page=2",200,"[]");
+        reply("/repos/ada/demo/commits/abc?per_page=100",200,"{\"stats\":{\"total\":0},\"files\":[]}");
+        var s=client.fetchSnapshot(client.repository("ada","demo"));
+        assertThat(s.commits()).hasSize(1);
+        assertThat(s.coverage().commitsCapped()).isFalse();
+        assertThat(requests).contains("/repositories/77/commits?sha=abc&page=2");
+    }
+    @Test void marksCapWhenFinalPageHasMoreItemsThanRemainingCapacity() {
+        reply("/repos/ada/demo/commits?sha=main&per_page=1",409,"{\"message\":\"Git Repository is empty.\"}");
+        var first=new ArrayList<String>();var second=new ArrayList<String>();
+        for(int i=1;i<=120;i++) {
+            String p="{\"id\":"+i+",\"number\":"+i+",\"title\":\"PR\",\"state\":\"open\",\"html_url\":\"https://github.com/ada/demo/pull/"+i+"\",\"updated_at\":\"2026-01-01T00:00:00Z\"}";
+            (i<=60?first:second).add(p);
+        }
+        link("/repos/ada/demo/pulls?state=all&sort=updated&direction=desc&per_page=100","["+String.join(",",first)+"]",base()+"/repos/ada/demo/pulls?page=2");
+        reply("/repos/ada/demo/pulls?page=2",200,"["+String.join(",",second)+"]");
+        var s=client.fetchSnapshot(client.repository("ada","demo"));
+        assertThat(s.pullRequests()).hasSize(100);
+        assertThat(s.coverage().prsCapped()).isTrue();
+    }
     @Test void rejectsPrivateRepositories() {
         reply("/repos/ada/demo",200,"{\"private\":true}");
         assertThatThrownBy(()->client.repository("ada","demo")).isInstanceOf(IllegalArgumentException.class);

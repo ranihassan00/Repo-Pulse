@@ -4,6 +4,7 @@ import sys
 import time
 from pathlib import Path
 from urllib.request import Request, urlopen
+from urllib.error import HTTPError
 
 BASE = "http://localhost:8080"
 
@@ -11,8 +12,13 @@ BASE = "http://localhost:8080"
 def request(path, payload=None):
     data = None if payload is None else json.dumps(payload).encode()
     req = Request(BASE + path, data=data, headers={"Content-Type": "application/json"})
-    with urlopen(req, timeout=210) as response:
-        return json.load(response)
+    try:
+        with urlopen(req, timeout=210) as response:
+            return json.load(response)
+    except HTTPError as error:
+        # The API exposes sanitized errors; include them in CI diagnostics.
+        print(f"API {error.code}: {error.read().decode()}", file=sys.stderr)
+        raise
 
 
 def ready():
