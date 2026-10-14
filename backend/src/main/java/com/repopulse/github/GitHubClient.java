@@ -83,9 +83,10 @@ public class GitHubClient {
         while(next!=null && result.size()<cap) {
             if(!seen.add(next) || ++pageCount>100) throw malformed();
             Response r=get(next,deadline,false); requireArray(r.body());
-            for(JsonNode n:r.body()) {if(result.size()==cap) break; result.add(n);}
+            boolean omitted=false;
+            for(JsonNode n:r.body()) {if(result.size()==cap) {omitted=true;break;} result.add(n);}
             next=r.next();
-            if(result.size()==cap) return new Page(result,next!=null || r.body().size()>cap);
+            if(result.size()==cap) return new Page(result,next!=null || omitted);
         }
         return new Page(result,false);
     }
@@ -141,8 +142,11 @@ public class GitHubClient {
         catch(Exception e){throw new GitHubException(502,"GitHub response unavailable or invalid",null);}
     }
     private void safeUri(URI url) {
+        // GitHub canonicalizes pagination to numeric repository IDs even when
+        // the original request used /repos/{owner}/{name}.
+        boolean repositoryPath=url.getPath().startsWith("/repos/") || url.getPath().matches("/repositories/[0-9]+(?:/.*)?");
         if(!Objects.equals(origin.getScheme(),url.getScheme()) || !Objects.equals(origin.getRawAuthority(),url.getRawAuthority()) ||
-            url.getUserInfo()!=null || !url.getPath().startsWith("/repos/")) throw new GitHubException(502,"Unsafe GitHub pagination URL",null);
+            url.getUserInfo()!=null || !repositoryPath) throw new GitHubException(502,"Unsafe GitHub pagination URL",null);
     }
     private URI uri(String path){return origin.resolve(path);}
     private long deadline(){return System.nanoTime()+budget.toNanos();}
