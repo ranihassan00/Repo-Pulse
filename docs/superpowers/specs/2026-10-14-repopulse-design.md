@@ -1,6 +1,6 @@
 # RepoPulse: repository intelligence foundation
 
-Status: approved by the user; application implementation has not started.
+Status: approved by the user; foundation implementation in progress.
 
 ## Purpose and resume alignment
 
@@ -80,4 +80,4 @@ Acceptance: import a public fixture repository, retrieve persisted PR and contri
 
 ## Repository publication
 
-Intended repository name: repopulse under the connected account ranihassan00. Default to private based on the proposed starter unless the user requests public. Check for an existing repository before creation and preserve any existing work. No remote repository has been created at design time.
+The user created and selected the public repository ranihassan00/Repo-Pulse during implementation. Use that repository, preserving its main branch. Publish the implementation through a feature branch and pull request.

@@ -1,0 +1,29 @@
+services:
+  database:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: repopulse
+      POSTGRES_USER: repopulse
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:?Copy .env.example to .env and choose a local password}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U repopulse -d repopulse"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+  backend:
+    build: ./backend
+    ports:
+      - "127.0.0.1:8080:8080"
+    environment:
+      SERVER_ADDRESS: 0.0.0.0
+      DATABASE_URL: jdbc:postgresql://database:5432/repopulse
+      DATABASE_USER: repopulse
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD:?Set DATABASE_PASSWORD}
+      GITHUB_TOKEN: ${GITHUB_TOKEN:-}
+    depends_on:
+      database:
+        condition: service_healthy
+volumes:
+  postgres_data:
